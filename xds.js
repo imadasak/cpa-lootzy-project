@@ -24,7 +24,7 @@ const luckyBoxRoutes = require('./routes/luckyBoxRoutes');
 // --- الخطوة 3: إعداد تطبيق Express ---
 const app = express();
 const PORT = 3000;
-//  app.set('trust proxy', true);
+app.set('trust proxy', true);
 
 // --- الخطوة 4: إعداد Middlewares ---
 app.use(express.json());
