@@ -6,7 +6,8 @@ const dbConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT // <-- هذا هو السطر الجديد والمهم
+    port: process.env.DB_PORT,
+    ssl: { "rejectUnauthorized": true }
 };
 
 const pool = mysql.createPool(dbConfig);
