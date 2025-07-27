@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+     <link rel="icon" type="image/png" href="https://i.postimg.cc/VN7qnf07/dejeuner-fusee-1.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>LOOTZY</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/2.4.2/uicons-solid-straight/css/uicons-solid-straight.css'>
+    <link rel="stylesheet" href="/css/style2.css">
+    
+    <style>
+        /* Base Styles */
+        :root {
+            --background-dark: #1a202c;
+            --background-light: #2d3748;
+            --border-color: #4a5568;
+            --text-primary: #edf2f7;
+            --text-secondary: #a0aec0;
+            --accent-primary: #48bb78;
+            --accent-warning: #F59E0B;
+            --accent-danger: #EF4444;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .avatar-link {
+            display: inline-block;
+            line-height: 0;
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        /* Page-specific Styles */
+        .page-header h2 {
+            font-size: 2em;
+            font-weight: 700;
+            margin: 0 0 30px 0;
+        }
+
+        .request-card {
+            background-color: var(--background-light);
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+        .request-card > div { flex-basis: 100%; }
+        
+        @media (min-width: 768px) {
+            .request-card > div { flex-basis: auto; }
+            .request-card .reward-details { flex: 3; }
+            .request-card .status-details { flex: 1; text-align: center; }
+            .request-card .actions-details { flex: 2; text-align: right; }
+        }
+
+        .request-card .reward-name { font-weight: 600; color: var(--text-primary); }
+        .request-card .request-date { font-size: 0.9em; color: var(--text-secondary); }
+        
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85em;
+            display: inline-block;
+            text-transform: capitalize;
+        }
+        .status-badge.pending { background-color: rgba(245, 158, 11, 0.2); color: var(--accent-warning); }
+        .status-badge.completed { background-color: rgba(72, 187, 120, 0.2); color: var(--accent-primary); }
+        .status-badge.rejected { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-danger); }
+
+        .code-container { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+        .redeem-code {
+            background-color: var(--background-dark);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            border: 1px solid var(--border-color);
+        }
+        .action-btn {
+            background-color: var(--border-color);
+            color: var(--text-primary);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .action-btn.cancel { background-color: var(--accent-danger); }
+        .action-btn:hover { background-color: #5a6678; }
+        .action-btn.cancel:hover { background-color: #c53030; }
+
+        .toast-notification { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 15px 25px; border-radius: 8px; color: white; font-weight: 600; z-index: 1002; opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
+        .toast-notification.show { opacity: 1; bottom: 40px; }
+        .toast-notification.success { background-color: var(--accent-primary); }
+        .toast-notification.error { background-color: var(--accent-danger); }
+        
+        /* --- بداية كود الخلفية المتحركة (CSS) --- */
+        .background-shapes { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; margin: 0; padding: 0; }
+        .background-shapes li { position: absolute; display: block; list-style: none; width: 20px; height: 20px; background: rgba(255, 255, 255, 0.1); animation: animate-shapes 25s linear infinite; bottom: -150px; }
+        .background-shapes li:nth-child(1){ left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
+        .background-shapes li:nth-child(2){ left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
+        .background-shapes li:nth-child(3){ left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
+        .background-shapes li:nth-child(4){ left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; }
+        .background-shapes li:nth-child(5){ left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
+        .background-shapes li:nth-child(6){ left: 75%; width: 110px; height: 110px; animation-delay: 3s; }
+        .background-shapes li:nth-child(7){ left: 35%; width: 150px; height: 150px; animation-delay: 7s; }
+        .background-shapes li:nth-child(8){ left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
+        .background-shapes li:nth-child(9){ left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
+        .background-shapes li:nth-child(10){ left: 85%; width: 150px; height: 150px; animation-delay: 0s; animation-duration: 11s; }
+        @keyframes animate-shapes { 0%{ transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 0; } 100%{ transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; } }
+        /* --- نهاية كود الخلفية المتحركة (CSS) --- */
+
+        /* Mobile Nav & Header Styles */
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background-color: var(--background-light); border-top: 1px solid var(--border-color); justify-content: space-around; align-items: center; z-index: 1000; }
+        .mobile-bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 12px; font-weight: 500; gap: 4px; transition: color 0.2s; flex-grow: 1; text-decoration: none; height: 100%; }
+        .mobile-bottom-nav .nav-item i { font-size: 22px; }
+        .mobile-bottom-nav .nav-item.active { color: var(--accent-primary); }
+
+        @media (max-width: 768px) {
+            .new-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; padding: 0 15px; display: flex; align-items: center; background-color: var(--background-dark); border-bottom: 1px solid var(--border-color); z-index: 1010; }
+            .header-left { display: none; }
+            .header-right { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+            .user-profile-menu { order: 1; }
+            .user-balance { order: 2; }
+            .notifications { order: 3; }
+            .user-profile-menu #user-username, .user-profile-menu .fa-chevron-down { display: none; }
+            .user-profile-menu img#user-avatar { width: 38px; height: 38px; border: 2px solid var(--accent-primary); }
+            .user-balance { background-color: var(--accent-primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 1em; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+            .user-balance .fa-star { display: inline-block; color: white; }
+            .notifications #bell-icon { font-size: 1.6em; color: var(--text-secondary); }
+            .notifications .notification-count { top: -3px; right: -5px; }
+            .mobile-bottom-nav { display: flex; }
+            body { padding-top: 60px; padding-bottom: 65px; }
+        }
+    </style>
+</head>
+<body>
+
+    <ul class="background-shapes">
+        <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
+    </ul>
+
+    <header class="new-header">
+        <div class="header-left">
+            <a href="/" class="logo"><i class="fas fa-rocket"></i><span>LOOTZY</span></a>
+            <nav class="main-nav">
+                <a href="/">Dashboard</a>
+                <a href="/offers.html">Offers</a>
+                <a href="/store.html">Rewards</a>
+                <a href="/my_requests.html" class="active">My Requests</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-profile-menu">
+                <a href="/profile.html" class="avatar-link">
+                    <img id="user-avatar" src="https://i.imgur.com/e6w0K0K.png" alt="User Avatar">
+                </a>
+                <span id="user-username">...</span>
+                <i class="fas fa-chevron-down"></i>
+                <div class="profile-dropdown">
+                    <a href="/profile.html">My Profile</a>
+                    <a href="/api/logout">Logout</a>
+                </div>
+            </div>
+            <div class="user-balance">
+                <i class="fas fa-star"></i>
+                <span id="user-balance-amount">...</span>
+            </div>
+            <div class="notifications">
+                <i id="bell-icon" class="fi fi-ss-bell bell-icon"></i>
+                <span id="notification-count" class="notification-count" style="display: none;"></span>
+                <div id="notifications-dropdown" class="profile-dropdown"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h2>My Requests</h2>
+        </div>
+        <div id="requests-container"></div>
+    </div>
+
+    <nav class="mobile-bottom-nav">
+        <a href="/index.html" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+        <a href="/offers.html" class="nav-item"><i class="fas fa-list-check"></i><span>Offers</span></a>
+        <a href="/store.html" class="nav-item"><i class="fas fa-store"></i><span>Store</span></a>
+        <a href="/my_requests.html" class="nav-item"><i class="fas fa-inbox"></i><span>Requests</span></a>
+    </nav>
+    
+    <script>
+        let allRequests = [];
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.classList.add('show'); }, 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => { if (document.body.contains(toast)) document.body.removeChild(toast); }, 500);
+            }, 3000);
+        }
+
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/me');
+                const user = await response.json();
+                const userPoints = parseFloat(user.points).toFixed(2);
+                document.getElementById('user-username').textContent = user.username;
+                document.getElementById('user-balance-amount').textContent = userPoints;
+                if (user.avatar_url) {
+                    document.getElementById('user-avatar').src = user.avatar_url;
+                }
+            } catch (error) { console.error("Error fetching user data:", error); }
+        }
+
+        async function fetchUserRequests() {
+            const container = document.getElementById('requests-container');
+            container.innerHTML = '<p style="text-align: center;">Loading...</p>';
+            try {
+                const response = await fetch('/api/my-requests');
+                allRequests = await response.json();
+                renderRequestList(allRequests);
+            } catch (error) { 
+                container.innerHTML = '<p style="text-align: center;">Error loading requests.</p>'; 
+            }
+        }
+
+        function renderRequestList(requests) {
+            const container = document.getElementById('requests-container');
+            if (requests.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">No requests found.</p>';
+                return;
+            }
+
+            container.innerHTML = requests.map(req => {
+                let statusBadge, detailsCell;
+                const statusClass = req.status.toLowerCase();
+
+                statusBadge = `<span class="status-badge ${statusClass}">${req.status}</span>`;
+
+                switch (req.status) {
+                    case 'Pending':
+                        detailsCell = `<button class="action-btn cancel" onclick="performCancel(${req.id})">Cancel</button>`;
+                        break;
+                    case 'Completed':
+                        detailsCell = `<div class="code-container"><code class="redeem-code">${req.redeem_code}</code><button class="action-btn" onclick="copyCode('${req.redeem_code}')"><i class="fas fa-copy"></i></button></div>`;
+                        break;
+                    case 'Rejected':
+                        detailsCell = `<span class="text-secondary" title="${req.admin_notes || ''}">Rejected</span>`;
+                        break;
+                    default:
+                        detailsCell = '';
+                }
+                return `
+                    <div class="request-card">
+                        <div class="reward-details">
+                            <div class="reward-name">${req.name} - ${req.description}</div>
+                            <div class="request-date">${new Date(req.request_date).toLocaleString('en-US')}</div>
+                        </div>
+                        <div class="status-details">${statusBadge}</div>
+                        <div class="actions-details">${detailsCell}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        function copyCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('Code copied successfully!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+                showToast('Failed to copy code.', 'error');
+            });
+        }
+
+        async function performCancel(requestId) {
+            try {
+                const response = await fetch(`/api/requests/${requestId}/cancel`, { method: 'POST' });
+                const result = await response.json();
+                if (response.ok) {
+                    showToast('Request cancelled and points refunded.', 'success');
+                    fetchUserRequests();
+                    fetchUserData(); 
+                } else {
+                    showToast(`Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showToast('A network error occurred.', 'error');
+            }
+        }
+        
+        async function fetchNotifications() {
+            const notificationCount = document.getElementById('notification-count');
+            const notificationsDropdown = document.getElementById('notifications-dropdown');
+            try {
+                const response = await fetch('/api/notifications');
+                const notifications = await response.json();
+                notificationsDropdown.innerHTML = '';
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'notification-header';
+                headerDiv.textContent = 'Notifications';
+                notificationsDropdown.appendChild(headerDiv);
+                let unreadCount = 0;
+                if (notifications.length === 0) {
+                    notificationsDropdown.innerHTML += '<div class="notification-item">No new notifications.</div>';
+                } else {
+                    notifications.forEach(notif => {
+                        if (notif.is_read === 0) unreadCount++;
+                        const item = document.createElement('div');
+                        item.className = `notification-item ${notif.is_read === 0 ? 'unread' : ''}`;
+                        item.innerHTML = `
+                            <div class="notification-content">${notif.message}</div>
+                            <div class="notification-timestamp">${new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</div>
+                            ${notif.link_url ? `<a href="${notif.link_url}" class="notification-link">Read more</a>` : ''}
+                        `;
+                        notificationsDropdown.appendChild(item);
+                    });
+                }
+                if (unreadCount > 0) {
+                    notificationCount.textContent = unreadCount;
+                    notificationCount.style.display = 'inline-flex';
+                } else {
+                    notificationCount.style.display = 'none';
+                }
+            } catch (error) { console.error("Failed to fetch notifications", error); }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('bell-icon').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const dropdown = document.getElementById('notifications-dropdown');
+                const isVisible = dropdown.style.display === 'block';
+                dropdown.style.display = isVisible ? 'none' : 'block';
+                if (!isVisible && document.getElementById('notification-count').style.display !== 'none') {
+                    await fetch('/api/notifications/mark-read', { method: 'POST' });
+                    document.getElementById('notification-count').style.display = 'none';
+                    dropdown.querySelectorAll('.unread').forEach(item => item.classList.remove('unread'));
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                const notificationsContainer = e.target.closest('.notifications');
+                const dropdown = document.getElementById('notifications-dropdown');
+                if (!notificationsContainer && dropdown) {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            const currentPage = window.location.pathname;
+            const navItems = document.querySelectorAll('.mobile-bottom-nav .nav-item');
+            navItems.forEach(item => {
+                const itemPath = new URL(item.href).pathname;
+                if (itemPath === currentPage) {
+                    item.classList.add('active');
+                }
+            });
+
+            /* --- بداية كود سلاسة التنقل --- */
+            const internalLinks = document.querySelectorAll('a[href^="/"]');
+
+            internalLinks.forEach(link => {
+                // استثناء روابط معينة مثل تسجيل الخروج
+                if (link.href.includes('/api/logout')) {
+                    return;
+                }
+
+                link.addEventListener('click', function(e) {
+                    const destinationUrl = this.href;
+
+                    // لا تقم بشيء إذا كان الرابط يفتح في صفحة جديدة أو هو نفس الصفحة الحالية
+                    if (destinationUrl === window.location.href || this.target === '_blank') {
+                        return;
+                    }
+
+                    e.preventDefault(); // إيقاف الانتقال الفوري
+                    document.body.classList.add('fade-out'); // تطبيق تأثير التلاشي
+
+                    // الانتظار حتى انتهاء التأثير ثم الانتقال للرابط
+                    setTimeout(() => {
+                        window.location.href = destinationUrl;
+                    }, 500); // يجب أن تكون المدة نفس مدة التحريك في CSS
+                });
+            });
+            /* --- نهاية كود سلاسة التنقل --- */
+
+            fetchUserData();
+            fetchUserRequests();
+            fetchNotifications();
+        });
+    </script>
+</body>
+</html>

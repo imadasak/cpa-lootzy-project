@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Manage Rewards</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-page">
+    <div class="sidebar">
+        <div class="sidebar-profile">
+            <img id="sidebar-avatar" src="https://i.imgur.com/e6w0K0K.png" alt="Admin Avatar">
+            <h3 id="sidebar-username">Admin</h3>
+            <div id="sidebar-level" class="sidebar-level">Control Panel</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            <a href="/admin_requests.html"><i class="fas fa-hourglass-half"></i><span>Pending Requests</span></a>
+            <a href="/admin_rewards.html" class="active"><i class="fas fa-edit"></i><span>Manage Rewards</span></a>
+            <a href="/admin_users.html"><i class="fas fa-users-cog"></i><span>Manage Users</span></a>
+            <a href="/admin_goals.html"><i class="fas fa-bullseye"></i><span>Manage Goals</span></a>
+            <a href="/admin_luckybox.html"><i class="fas fa-dice"></i><span>Lucky Box Prizes</span></a>
+        </nav>
+        <div class="sidebar-logout sidebar-nav">
+            <a href="/"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="sidebar-overlay"></div>
+        <header class="header">
+            <button class="mobile-nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>Manage Rewards & Categories</h2>
+        </header>
+        
+        <div class="rewards-page-grid">
+            <div class="management-section">
+                <h2>Categories</h2>
+                <div id="categories-list" class="categories-grid-admin">
+                    </div>
+                <form id="add-category-form" class="category-form-admin">
+                    <h4>Add New Category</h4>
+                    <div class="form-group"><input type="text" id="cat-name" placeholder="Category Name" required></div>
+                    <div class="form-group"><input type="text" id="cat-image" placeholder="Image URL" required></div>
+                    <button type="submit"><i class="fas fa-plus"></i> Add Category</button>
+                </form>
+            </div>
+
+            <div class="management-section">
+                <div class="rewards-header">
+                    <h2>Rewards</h2>
+                    <button class="add-reward-btn" onclick="openRewardModal()"><i class="fas fa-plus"></i> Add New Reward</button>
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label for="category-filter">Filter by Category:</label>
+                    <div class="custom-select-wrapper">
+                        <select id="category-filter" onchange="populateRewards()"></select>
+                    </div>
+                </div>
+                
+                <div id="rewards-content">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="rewardModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add New Reward</h3>
+                <span class="close-button" onclick="closeRewardModal()">&times;</span>
+            </div>
+            <form id="reward-form">
+                <input type="hidden" id="reward-id">
+                <div class="form-group">
+                    <label for="reward-category">Category</label>
+                    <select id="reward-category" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="reward-name">Reward Name (e.g., Free Fire)</label>
+                    <input type="text" id="reward-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="reward-description">Description (e.g., 100 Diamonds)</label>
+                    <input type="text" id="reward-description" required>
+                </div>
+                <div class="form-group">
+                    <label for="reward-cost">Price (in points)</label>
+                    <input type="number" id="reward-cost" required>
+                </div>
+                 <div class="form-group">
+                    <label for="reward-image-url">Image URL</label>
+                    <input type="text" id="reward-image-url">
+                </div>
+                <div class="form-group">
+                    <label for="reward-required-level">Required Level</label>
+                    <input type="number" id="reward-required-level" value="1" required>
+                </div>
+                <button type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let allData = [];
+
+        async function fetchAdminData() {
+            try {
+                const response = await fetch('/api/me');
+                const user = await response.json();
+                document.getElementById('sidebar-username').textContent = user.username;
+                if (user.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = user.avatar_url;
+                }
+            } catch (error) { console.error("Could not fetch admin user data"); }
+        }
+
+        async function fetchData(categoryIdToSelect = null) {
+            try {
+                const response = await fetch('/api/admin/rewards');
+                allData = await response.json();
+                populateCategoriesList();
+                populateCategoryFilter();
+                if (categoryIdToSelect) {
+                    document.getElementById('category-filter').value = categoryIdToSelect;
+                }
+                populateRewards();
+            } catch (error) { console.error("Failed to load data", error); }
+        }
+        
+        function populateCategoriesList() {
+            const listEl = document.getElementById('categories-list');
+            listEl.innerHTML = '';
+             if (allData.length === 0) {
+                listEl.innerHTML = '<p style="text-align: center; color: var(--admin-text-secondary);">No categories found.</p>';
+             } else {
+                allData.forEach(cat => {
+                    listEl.innerHTML += `
+                        <div class="category-card-admin">
+                            <img src="${cat.image_url}" alt="${cat.name}">
+                            <span>${cat.name}</span>
+                            <button class="delete-btn-icon" onclick="deleteCategory(${cat.id})" title="Delete Category">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function populateCategoryFilter() {
+            const selectEl = document.getElementById('category-filter');
+            selectEl.innerHTML = '';
+            if (allData.length === 0) {
+                selectEl.innerHTML = '<option value="">Add a category first</option>';
+            } else {
+                allData.forEach(cat => {
+                    selectEl.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                });
+            }
+        }
+
+        function populateRewards() {
+            const container = document.getElementById('rewards-content');
+            const selectedCategoryId = document.getElementById('category-filter').value;
+            const category = allData.find(c => c.id == selectedCategoryId);
+            
+            container.innerHTML = '';
+
+            if (!category || !category.rewards || category.rewards.length === 0) {
+                container.innerHTML = '<p class="no-rewards-message">No rewards found in this category.</p>';
+                return;
+            }
+
+            const cardsHtml = category.rewards.map(reward => `
+                <div class="reward-admin-card">
+                    <div class="rac-header">
+                        <img src="${reward.image_url || 'https://i.imgur.com/e6w0K0K.png'}" alt="${reward.name}" class="rac-img">
+                        <div class="rac-title">
+                            <div class="rac-name">${reward.name}</div>
+                            <div class="rac-desc">${reward.description}</div>
+                        </div>
+                        <div class="rac-actions">
+                            <button class="action-btn-icon edit" onclick="openRewardModal(${reward.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn-icon delete" onclick="deleteReward(${reward.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="rac-body">
+                        <div class="rac-stat">
+                            <label>Price</label>
+                            <span class="reward-cost-badge">${reward.cost} ⭐</span>
+                        </div>
+                        <div class="rac-stat">
+                            <label>Level</label>
+                            <span>${reward.required_level}</span>
+                        </div>
+                        <div class="rac-stat">
+                            <label>Hot</label>
+                            <label class="toggle-switch"><input type="checkbox" ${reward.is_hot ? 'checked' : ''} onchange="toggleStatus(${reward.id}, 'is_hot', this.checked)"><span class="slider"></span></label>
+                        </div>
+                        <div class="rac-stat">
+                            <label>New</label>
+                            <label class="toggle-switch"><input type="checkbox" ${reward.is_new ? 'checked' : ''} onchange="toggleStatus(${reward.id}, 'is_new', this.checked)"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = `<div class="rewards-grid-layout">${cardsHtml}</div>`;
+        }
+
+
+        document.getElementById('add-category-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('cat-name').value;
+            const image_url = document.getElementById('cat-image').value;
+            const response = await fetch('/api/admin/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, image_url }) });
+            if (response.ok) { e.target.reset(); fetchData(); } else { alert('Failed to add category.'); }
+        });
+        
+        async function deleteCategory(categoryId) {
+          
+            const response = await fetch('/api/admin/categories/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ categoryId }) });
+            if (response.ok) fetchData(); else alert('Failed to delete category.');
+        }
+
+        async function deleteReward(rewardId) {
+         
+            const selectedCategoryId = document.getElementById('category-filter').value;
+            const response = await fetch('/api/admin/rewards/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rewardId }) });
+            if (response.ok) fetchData(selectedCategoryId); else alert('Failed to delete reward.');
+        }
+
+        async function toggleStatus(rewardId, field, status) {
+            const response = await fetch('/api/admin/rewards/toggle-status', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ rewardId, field, status: status ? 1 : 0 }) 
+            });
+            if (!response.ok) {
+                alert('Failed to update status.');
+                const selectedCategoryId = document.getElementById('category-filter').value;
+                fetchData(selectedCategoryId); 
+            }
+        }
+
+        const modal = document.getElementById('rewardModal');
+        const modalTitle = document.getElementById('modal-title');
+        const rewardForm = document.getElementById('reward-form');
+        const categorySelect = document.getElementById('reward-category');
+
+        function openRewardModal(rewardId = null) {
+            rewardForm.reset();
+            categorySelect.innerHTML = allData.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            if (rewardId) {
+                modalTitle.textContent = 'Edit Reward';
+                let rewardToEdit;
+                for(const cat of allData) {
+                    const found = cat.rewards.find(r => r.id === rewardId);
+                    if(found) { rewardToEdit = found; break; }
+                }
+                
+                if (rewardToEdit) {
+                    document.getElementById('reward-id').value = rewardToEdit.id;
+                    document.getElementById('reward-category').value = rewardToEdit.category_id;
+                    document.getElementById('reward-name').value = rewardToEdit.name;
+                    document.getElementById('reward-description').value = rewardToEdit.description;
+                    document.getElementById('reward-cost').value = rewardToEdit.cost;
+                    document.getElementById('reward-image-url').value = rewardToEdit.image_url;
+                    document.getElementById('reward-required-level').value = rewardToEdit.required_level;
+                }
+            } else {
+                modalTitle.textContent = 'Add New Reward';
+                document.getElementById('reward-id').value = '';
+                document.getElementById('reward-category').value = document.getElementById('category-filter').value;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeRewardModal() {
+            modal.style.display = 'none';
+        }
+
+        rewardForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const rewardId = document.getElementById('reward-id').value;
+            const selectedCategoryIdOnSubmit = document.getElementById('reward-category').value;
+            const data = {
+                category_id: selectedCategoryIdOnSubmit,
+                name: document.getElementById('reward-name').value,
+                description: document.getElementById('reward-description').value,
+                cost: document.getElementById('reward-cost').value,
+                image_url: document.getElementById('reward-image-url').value,
+                required_level: document.getElementById('reward-required-level').value,
+            };
+            const url = rewardId ? `/api/admin/rewards/${rewardId}/update` : '/api/admin/rewards';
+            const method = 'POST';
+
+            const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+
+            if (response.ok) {
+                closeRewardModal();
+                fetchData(selectedCategoryIdOnSubmit);
+            } else {
+                const result = await response.json();
+                alert(`Error: ${result.message}`);
+            }
+        });
+
+        window.onclick = (event) => {
+            if (event.target == modal) {
+                closeRewardModal();
+            }
+        }
+        
+        window.onload = function() {
+            fetchAdminData();
+            fetchData();
+        };
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.mobile-nav-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+
+            if (navToggle && sidebar && overlay) {
+                navToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                    overlay.classList.toggle('active');
+                    this.classList.toggle('active');
+                });
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('show');
+                    overlay.classList.remove('active');
+                    navToggle.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

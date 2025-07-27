@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Manage Goals</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-page">
+    <div class="sidebar">
+        <div class="sidebar-profile">
+            <img id="sidebar-avatar" src="https://i.imgur.com/e6w0K0K.png" alt="Admin Avatar">
+            <h3 id="sidebar-username">Admin</h3>
+            <div id="sidebar-level" class="sidebar-level">Control Panel</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            <a href="/admin_requests.html"><i class="fas fa-hourglass-half"></i><span>Pending Requests</span></a>
+            <a href="/admin_rewards.html"><i class="fas fa-edit"></i><span>Manage Rewards</span></a>
+            <a href="/admin_users.html"><i class="fas fa-users-cog"></i><span>Manage Users</span></a>
+            <a href="/admin_goals.html" class="active"><i class="fas fa-bullseye"></i><span>Manage Goals</span></a>
+            <a href="/admin_luckybox.html"><i class="fas fa-dice"></i><span>Lucky Box Prizes</span></a>
+        </nav>
+        <div class="sidebar-logout sidebar-nav">
+            <a href="/"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="sidebar-overlay"></div>
+        <header class="header">
+            <button class="mobile-nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>Manage Daily Goals</h2>
+        </header>
+        
+        <div class="management-grid goals-page-grid">
+            <div class="management-section">
+                <h2 id="form-title">Add New Goal</h2>
+                <form id="goal-form">
+                    <input type="hidden" id="goal-id">
+                    <div class="form-group">
+                        <label for="goal-type">Goal Type</label>
+                        <select id="goal-type" required>
+                            <option value="daily" selected>Daily</option>
+                            <option value="weekly" disabled>Weekly (Not available yet)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="goal-required-offers">Required Offers</label>
+                        <input type="number" id="goal-required-offers" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="goal-bonus-points">Bonus Points</label>
+                        <input type="number" id="goal-bonus-points" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="goal-bonus-xp">Bonus XP</label>
+                        <input type="number" id="goal-bonus-xp" min="0" required>
+                    </div>
+                    <button type="submit">Save Goal</button>
+                    <button type="button" onclick="resetForm()" class="cancel-btn" style="display: none; background-color: var(--admin-text-secondary); margin-top: 10px;">Cancel Edit</button>
+                </form>
+            </div>
+
+            <div class="management-section">
+                <h2>Current Goals</h2>
+                <div id="goals-container">
+                    </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let allGoals = [];
+        let resizeTimer;
+
+        // Debounce function to limit how often a function gets called on resize
+        function debounce(func, time) {
+            return function(...args) {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    func.apply(this, args);
+                }, time);
+            };
+        }
+
+        async function fetchAdminData() {
+            try {
+                const response = await fetch('/api/me');
+                const user = await response.json();
+                document.getElementById('sidebar-username').textContent = user.username;
+                if (user.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = user.avatar_url;
+                }
+            } catch (error) { console.error("Could not fetch admin user data"); }
+        }
+
+        async function fetchGoals() {
+            try {
+                const response = await fetch('/api/admin/goals');
+                allGoals = await response.json();
+                renderGoals();
+            } catch (error) {
+                document.getElementById('goals-container').innerHTML = `<p>Error loading goals.</p>`;
+            }
+        }
+
+        function renderGoals() {
+            const container = document.getElementById('goals-container');
+            container.innerHTML = ''; 
+
+            if (!allGoals || allGoals.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--admin-text-secondary);">No goals are defined yet.</p>';
+                return;
+            }
+
+            const isMobile = window.innerWidth <= 992;
+
+            if (isMobile) {
+                const cardsHtml = allGoals.map(goal => `
+                    <div class="goal-card-mobile">
+                        <div class="goal-card-desc">${goal.description}</div>
+                        <div class="goal-card-details">
+                            <div><strong>Reward:</strong> <span class="reward-cost-badge">${goal.bonus_points} ⭐ / ${goal.bonus_xp} XP</span></div>
+                            <div><strong>Active:</strong> <label class="toggle-switch"><input type="checkbox" ${goal.is_active ? 'checked' : ''} onchange="toggleGoalStatus(${goal.id}, this.checked)"><span class="slider"></span></label></div>
+                        </div>
+                        <div class="actions-cell-mobile">
+                            <button class="action-btn-icon edit" onclick="editGoal(${goal.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn-icon delete" onclick="deleteGoal(${goal.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+                container.innerHTML = `<div class="goals-cards-container">${cardsHtml}</div>`;
+
+            } else {
+                const tableHtml = `
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Reward</th>
+                                    <th>Status (Active)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${allGoals.map(goal => `
+                                    <tr id="goal-row-${goal.id}">
+                                        <td>${goal.description}</td>
+                                        <td><span class="reward-cost-badge">${goal.bonus_points} ⭐ / ${goal.bonus_xp} XP</span></td>
+                                        <td>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" ${goal.is_active ? 'checked' : ''} onchange="toggleGoalStatus(${goal.id}, this.checked)">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </td>
+                                        <td class="actions-cell">
+                                            <button class="action-btn-icon edit" onclick="editGoal(${goal.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                                            <button class="action-btn-icon delete" onclick="deleteGoal(${goal.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+                container.innerHTML = tableHtml;
+            }
+        }
+        
+        function resetForm() {
+            document.getElementById('goal-form').reset();
+            document.getElementById('goal-id').value = '';
+            document.getElementById('form-title').textContent = 'Add New Goal';
+            document.querySelector('.cancel-btn').style.display = 'none';
+        }
+
+        function editGoal(id) {
+            const goal = allGoals.find(g => g.id === id);
+            if (goal) {
+                document.getElementById('goal-id').value = goal.id;
+                document.getElementById('goal-type').value = goal.goal_type;
+                document.getElementById('goal-required-offers').value = goal.required_offers;
+                document.getElementById('goal-bonus-points').value = goal.bonus_points;
+                document.getElementById('goal-bonus-xp').value = goal.bonus_xp;
+                document.getElementById('form-title').textContent = 'Edit Goal';
+                document.querySelector('.cancel-btn').style.display = 'inline-block';
+                window.scrollTo(0, 0);
+            }
+        }
+
+        document.getElementById('goal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('goal-id').value;
+            const data = {
+                goal_type: document.getElementById('goal-type').value,
+                required_offers: document.getElementById('goal-required-offers').value,
+                bonus_points: document.getElementById('goal-bonus-points').value,
+                bonus_xp: document.getElementById('goal-bonus-xp').value,
+            };
+
+            const url = id ? `/api/admin/goals/${id}` : '/api/admin/goals';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                if (response.ok) { resetForm(); fetchGoals(); } 
+                else { alert('Error saving goal.'); }
+            } catch (error) { alert('A network error occurred.'); }
+        });
+        
+        async function deleteGoal(id) {
+           
+            try {
+                const response = await fetch(`/api/admin/goals/${id}`, { method: 'DELETE' });
+                if (response.ok) { fetchGoals(); } 
+                else { alert('Failed to delete goal.'); }
+            } catch (error) { alert('A network error occurred.'); }
+        }
+        
+        async function toggleGoalStatus(id, isActive) {
+            try {
+                const response = await fetch(`/api/admin/goals/${id}/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: isActive }) });
+                if (!response.ok) { alert('Failed to update goal status.'); fetchGoals(); }
+            } catch (error) { alert('A network error occurred.'); fetchGoals(); }
+        }
+        
+        window.addEventListener('resize', debounce(renderGoals, 250));
+
+        window.onload = function() {
+            fetchAdminData();
+            fetchGoals();
+        };
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.mobile-nav-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+
+            if (navToggle && sidebar && overlay) {
+                navToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                    overlay.classList.toggle('active');
+                    this.classList.toggle('active');
+                });
+
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('show');
+                    overlay.classList.remove('active');
+                    navToggle.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

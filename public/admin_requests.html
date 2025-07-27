@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Requests</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+
+</head>
+<body class="admin-page">
+    <div class="sidebar">
+        <div class="sidebar-profile">
+            <img id="sidebar-avatar" src="https://i.imgur.com/e6w0K0K.png" alt="Admin Avatar">
+            <h3 id="sidebar-username">Admin</h3>
+            <div id="sidebar-level" class="sidebar-level">Control Panel</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            <a href="/admin_requests.html" class="active"><i class="fas fa-hourglass-half"></i><span>Pending Requests</span></a>
+            <a href="/admin_rewards.html"><i class="fas fa-edit"></i><span>Manage Rewards</span></a>
+            <a href="/admin_users.html"><i class="fas fa-users-cog"></i><span>Manage Users</span></a>
+            <a href="/admin_goals.html"><i class="fas fa-bullseye"></i><span>Manage Goals</span></a>
+            <a href="/admin_luckybox.html"><i class="fas fa-dice"></i><span>Lucky Box Prizes</span></a>
+        </nav>
+        <div class="sidebar-logout sidebar-nav">
+            <a href="/"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="sidebar-overlay"></div>
+        <header class="header">
+            <button class="mobile-nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>Pending & Completed Requests</h2>
+        </header>
+        
+        <div class="management-section">
+            <h2>Pending Requests</h2>
+            <div id="pending-requests-container" class="requests-grid">
+                </div>
+        </div>
+
+        <div class="management-section" style="margin-top: 30px;">
+            <h2>Completed & Rejected Requests</h2>
+            <div style="overflow-x: auto;">
+                 <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Reward</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="completed-requests-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="rejectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reason for Rejection</h3>
+                <span class="close-button" onclick="closeRejectionModal()">&times;</span>
+            </div>
+            <form id="rejection-form" onsubmit="submitRejection(event)">
+                <div class="form-group">
+                    <label for="rejection-reason">Please provide a clear reason for rejecting this request.</label>
+                    <textarea id="rejection-reason" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="reject-btn">Confirm Rejection</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        let currentRequestIdForRejection = null;
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.classList.add('show'); }, 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => { if (document.body.contains(toast)) document.body.removeChild(toast); }, 500);
+            }, 3000);
+        }
+
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/me');
+                const user = await response.json();
+                document.getElementById('sidebar-username').textContent = user.username;
+                if (user.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = user.avatar_url;
+                }
+            } catch (error) {
+                console.error("Could not fetch admin user data");
+            }
+        }
+
+        async function fetchPendingRequests() {
+            const container = document.getElementById('pending-requests-container');
+            container.innerHTML = '<p style="text-align: center;">Loading...</p>';
+            try {
+                const response = await fetch('/api/admin/requests');
+                const requests = await response.json();
+                if (requests.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: var(--admin-text-secondary);">No pending requests.</p>';
+                } else {
+                    container.innerHTML = requests.map(req => `
+                        <div class="request-card-admin" id="request-${req.id}">
+                            <div class="card-header">
+                                <span class="username">${req.username}</span>
+                                <span class="date">${new Date(req.request_date).toLocaleString('en-US')}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="reward-name">${req.reward_name}</p>
+                                <p class="reward-cost">${req.reward_cost} ⭐</p>
+                            </div>
+                            <div class="card-footer">
+                                <input type="text" id="serial-${req.id}" class="code-input" placeholder="Enter code to approve...">
+                                <div class="action-buttons">
+                                    <button class="approve-btn" onclick="approveRequest(${req.id})"><i class="fas fa-check"></i> Approve</button>
+                                    <button class="reject-btn" onclick="rejectRequest(${req.id})"><i class="fas fa-times"></i> Reject</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                container.innerHTML = '<p style="text-align: center;">Error loading requests.</p>';
+            }
+        }
+
+        async function fetchCompletedOrRejectedRequests() {
+            const tbody = document.getElementById('completed-requests-tbody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Loading...</td></tr>';
+            try {
+                const response = await fetch('/api/admin/requests/completed');
+                const requests = await response.json();
+                if (requests.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No completed or rejected requests.</td></tr>';
+                } else {
+                    tbody.innerHTML = requests.map(req => {
+                        let statusBadge;
+                        let details = '';
+                        if(req.status === 'Completed') {
+                            statusBadge = `<span class="status-badge completed">Completed</span>`;
+                            details = req.redeem_code ? `<code>${req.redeem_code}</code>` : 'N/A';
+                        } else {
+                            statusBadge = `<span class="status-badge rejected">Rejected</span>`;
+                            details = req.admin_notes || 'No reason provided';
+                        }
+                        
+                        return `
+                            <tr>
+                                <td>${req.username}</td>
+                                <td>${req.reward_name}</td>
+                                <td>${new Date(req.completion_date).toLocaleString('en-US')}</td>
+                                <td>${statusBadge}</td>
+                                <td>${details}</td>
+                            </tr>
+                        `
+                    }).join('');
+                }
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Error loading requests.</td></tr>';
+            }
+        }
+
+        async function approveRequest(requestId) {
+            const serialKey = document.getElementById(`serial-${requestId}`).value;
+            if (!serialKey) {
+                showToast("Please enter the serial key to approve.", "error");
+                return;
+            }
+            try {
+                const response = await fetch('/api/admin/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestId, serialKey })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    fetchPendingRequests();
+                    fetchCompletedOrRejectedRequests();
+                } else {
+                    showToast(`Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showToast("A network error occurred.", 'error');
+            }
+        }
+
+        // --- NEW MODAL FUNCTIONS ---
+        function openRejectionModal(requestId) {
+            currentRequestIdForRejection = requestId;
+            document.getElementById('rejection-reason').value = '';
+            document.getElementById('rejectionModal').style.display = 'flex';
+            document.getElementById('rejection-reason').focus();
+        }
+
+        function closeRejectionModal() {
+            document.getElementById('rejectionModal').style.display = 'none';
+        }
+
+        function rejectRequest(requestId) {
+            openRejectionModal(requestId); // This now opens the modal instead of a prompt
+        }
+        
+        async function submitRejection(event) {
+            event.preventDefault();
+            const reason = document.getElementById('rejection-reason').value;
+            const requestId = currentRequestIdForRejection;
+
+            if (!reason) {
+                showToast("A reason is required to reject a request.", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/reject', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestId, reason })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    fetchPendingRequests();
+                    fetchCompletedOrRejectedRequests();
+                } else {
+                    showToast(`Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showToast("A network error occurred.", 'error');
+            } finally {
+                closeRejectionModal();
+            }
+        }
+
+        window.onload = function() {
+            fetchUserData();
+            fetchPendingRequests();
+            fetchCompletedOrRejectedRequests();
+        };
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.mobile-nav-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const rejectionModal = document.getElementById('rejectionModal');
+
+            if (navToggle && sidebar && overlay) {
+                navToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                    overlay.classList.toggle('active');
+                    this.classList.toggle('active');
+                });
+
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('show');
+                    overlay.classList.remove('active');
+                    navToggle.classList.remove('active');
+                });
+            }
+            
+            window.addEventListener('click', function(event) {
+                if (event.target == rejectionModal) {
+                    closeRejectionModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

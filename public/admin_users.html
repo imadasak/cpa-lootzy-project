@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Manage Users</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-page">
+    <div class="sidebar">
+        <div class="sidebar-profile">
+            <img id="sidebar-avatar" src="https://i.imgur.com/e6w0K0K.png" alt="Admin Avatar">
+            <h3 id="sidebar-username">Admin</h3>
+            <div id="sidebar-level" class="sidebar-level">Control Panel</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            <a href="/admin_requests.html"><i class="fas fa-hourglass-half"></i><span>Pending Requests</span></a>
+            <a href="/admin_rewards.html"><i class="fas fa-edit"></i><span>Manage Rewards</span></a>
+            <a href="/admin_users.html" class="active"><i class="fas fa-users-cog"></i><span>Manage Users</span></a>
+            <a href="/admin_goals.html"><i class="fas fa-bullseye"></i><span>Manage Goals</span></a>
+            <a href="/admin_luckybox.html"><i class="fas fa-dice"></i><span>Lucky Box Prizes</span></a>
+        </nav>
+        <div class="sidebar-logout sidebar-nav">
+            <a href="/"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="sidebar-overlay"></div>
+        <header class="header">
+            <button class="mobile-nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>Manage Users</h2>
+        </header>
+        
+        <div class="management-section">
+             <div id="users-container">
+                 </div>
+        </div>
+    </div>
+
+    <script>
+        let allUsers = [];
+        let resizeTimer;
+
+        // Debounce function to limit how often a function gets called on resize
+        function debounce(func, time) {
+            return function(...args) {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    func.apply(this, args);
+                }, time);
+            };
+        }
+
+        async function fetchAdminData() {
+            try {
+                const response = await fetch('/api/me');
+                const user = await response.json();
+                document.getElementById('sidebar-username').textContent = user.username;
+                if (user.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = user.avatar_url;
+                }
+            } catch (error) { console.error("Could not fetch admin user data"); }
+        }
+
+        async function fetchAndRenderUsers() {
+            const container = document.getElementById('users-container');
+            container.innerHTML = '<p style="text-align: center;">Loading users...</p>';
+            try {
+                const response = await fetch('/api/admin/users');
+                allUsers = await response.json();
+                renderUsers();
+            } catch (error) {
+                container.innerHTML = '<p style="text-align: center;">Error loading users.</p>';
+            }
+        }
+        
+        function renderUsers() {
+            const container = document.getElementById('users-container');
+            container.innerHTML = ''; // Clear previous content
+
+            if (allUsers.length === 0) {
+                container.innerHTML = '<p style="text-align: center;">No users found.</p>';
+                return;
+            }
+
+            const isMobile = window.innerWidth <= 992;
+
+            if (isMobile) {
+                // RENDER TEXT-ONLY CARDS FOR MOBILE
+                const cardsHtml = allUsers.map(user => `
+                    <div class="user-card-mobile">
+                        <div class="user-card-info">
+                            <span class="user-card-name">${user.username}</span>
+                            <span class="user-card-email">${user.email || 'N/A'}</span>
+                        </div>
+                        <div class="user-card-body">
+                            <div><strong>Points:</strong> <span class="reward-cost-badge">${parseFloat(user.points).toFixed(2)} ⭐</span></div>
+                            <div><strong>Level:</strong> ${user.level}</div>
+                            <div><strong>XP:</strong> ${user.xp}</div>
+                            <div><strong>Registered:</strong> ${new Date(user.createdAt).toLocaleDateString('en-US')}</div>
+                        </div>
+                    </div>
+                `).join('');
+                container.innerHTML = `<div class="users-cards-container">${cardsHtml}</div>`;
+
+            } else {
+                // RENDER TABLE FOR DESKTOP
+                const tableHtml = `
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Points</th>
+                                    <th>Level</th>
+                                    <th>XP</th>
+                                    <th>Registered On</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${allUsers.map(user => `
+                                    <tr>
+                                        <td>${user.username}</td>
+                                        <td>${user.email || 'N/A'}</td>
+                                        <td><span class="reward-cost-badge">${parseFloat(user.points).toFixed(2)} ⭐</span></td>
+                                        <td>${user.level}</td>
+                                        <td>${user.xp}</td>
+                                        <td>${new Date(user.createdAt).toLocaleDateString('en-US')}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+                container.innerHTML = tableHtml;
+            }
+        }
+        
+        // Add resize event listener to re-render on screen size changes
+        window.addEventListener('resize', debounce(renderUsers, 250));
+
+        window.onload = function() {
+            fetchAdminData();
+            fetchAndRenderUsers();
+        };
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.mobile-nav-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+
+            if (navToggle && sidebar && overlay) {
+                navToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                    overlay.classList.toggle('active');
+                    this.classList.toggle('active'); // This toggles the button's state
+                });
+
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('show');
+                    overlay.classList.remove('active');
+                    navToggle.classList.remove('active'); // This resets the button's state
+                });
+            }
+        });
+    </script>
+</body>
+</html>

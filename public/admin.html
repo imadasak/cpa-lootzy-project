@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-page">
+    <div class="sidebar">
+        <div class="sidebar-profile">
+            <img id="sidebar-avatar" src="https://i.imgur.com/e6w0K0K.png" alt="Admin Avatar">
+            <h3 id="sidebar-username">Admin</h3>
+            <div id="sidebar-level" class="sidebar-level">Control Panel</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin" class="active"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            <a href="/admin_requests.html"><i class="fas fa-hourglass-half"></i><span>Pending Requests</span></a>
+            <a href="/admin_rewards.html"><i class="fas fa-edit"></i><span>Manage Rewards</span></a>
+            <a href="/admin_users.html"><i class="fas fa-users-cog"></i><span>Manage Users</span></a>
+            <a href="/admin_goals.html"><i class="fas fa-bullseye"></i><span>Manage Goals</span></a>
+            <a href="/admin_luckybox.html"><i class="fas fa-dice"></i><span>Lucky Box Prizes</span></a>
+        </nav>
+        <div class="sidebar-logout sidebar-nav">
+            <a href="/"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="sidebar-overlay"></div>
+        <header class="header">
+            <button class="mobile-nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>Admin Dashboard</h2>
+        </header>
+
+        <div class="dashboard-widgets">
+            <div class="widget card-widget earnings-widget">
+                <div class="widget-header">
+                    <div class="icon-container"><i class="fas fa-dollar-sign"></i></div>
+                    <h3>Today's Earnings</h3>
+                </div>
+                <div class="widget-body">
+                    <span id="todays-earnings">...</span>
+                </div>
+            </div>
+
+            <div class="widget card-widget conversions-widget">
+                <div class="widget-header">
+                     <div class="icon-container"><i class="fas fa-check-circle"></i></div>
+                    <h3>Today's Conversions</h3>
+                </div>
+                <div class="widget-body">
+                    <span id="todays-conversions">...</span>
+                </div>
+            </div>
+
+            <div class="widget card-widget users-widget">
+                <div class="widget-header">
+                    <div class="icon-container"><i class="fas fa-user-plus"></i></div>
+                    <h3>New Users Today</h3>
+                </div>
+                <div class="widget-body">
+                    <span id="new-users-today">...</span>
+                </div>
+            </div>
+
+            <div class="widget card-widget pending-requests-widget">
+                <div class="widget-header">
+                   <div class="icon-container"><i class="fas fa-inbox"></i></div>
+                    <h3>Pending Requests</h3>
+                </div>
+                <div class="widget-body">
+                    <span id="pending-requests">...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid-double">
+             <div class="widget chart-widget">
+                <div class="widget-header">
+                    <h3>All-Time Earnings</h3>
+                </div>
+                <div class="widget-body large-text">
+                    <span id="all-time-earnings">...</span>
+                </div>
+            </div>
+             <div class="widget chart-widget">
+                <div class="widget-header">
+                    <h3>Total Users</h3>
+                </div>
+                <div class="widget-body large-text">
+                     <span id="total-users">...</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        async function fetchAdminData() {
+            try {
+                const response = await fetch('/api/me');
+                const user = await response.json();
+                document.getElementById('sidebar-username').textContent = user.username;
+                if (user.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = user.avatar_url;
+                }
+            } catch (error) { console.error("Could not fetch admin user data"); }
+        }
+
+        async function fetchDashboardStats() {
+            try {
+                const response = await fetch('/api/admin/dashboard-stats');
+                const stats = await response.json();
+
+                document.getElementById('todays-earnings').textContent = `$${parseFloat(stats.todaysEarnings || 0).toFixed(2)}`;
+                document.getElementById('todays-conversions').textContent = stats.todaysConversions || 0;
+                document.getElementById('new-users-today').textContent = stats.newUsersToday || 0;
+                document.getElementById('total-users').textContent = stats.totalUsers || 0;
+                document.getElementById('all-time-earnings').textContent = `$${parseFloat(stats.allTimeEarnings || 0).toFixed(2)}`;
+                document.getElementById('pending-requests').textContent = stats.pendingRequests || 0;
+
+            } catch (error) {
+                console.error("Failed to load dashboard stats", error);
+                document.querySelectorAll('.widget-body > span').forEach(el => el.textContent = 'Error');
+            }
+        }
+
+        window.onload = function() {
+            fetchAdminData();
+            fetchDashboardStats();
+        };
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.mobile-nav-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+
+            if (navToggle && sidebar && overlay) {
+                navToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                    overlay.classList.toggle('active');
+                    this.classList.toggle('active'); // This toggles the button's state
+                });
+
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('show');
+                    overlay.classList.remove('active');
+                    navToggle.classList.remove('active'); // This resets the button's state
+                });
+            }
+        });
+    </script>
+</body>
+</html>

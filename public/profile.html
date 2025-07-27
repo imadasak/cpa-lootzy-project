@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+     <link rel="icon" type="image/png" href="https://i.postimg.cc/VN7qnf07/dejeuner-fusee-1.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>LOOTZY</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/2.4.2/uicons-solid-straight/css/uicons-solid-straight.css'>
+    <link rel="stylesheet" href="/css/style2.css">
+
+    <style>
+        /* Base Styles */
+        :root {
+            --background-dark: #1a202c;
+            --background-light: #2d3748;
+            --border-color: #4a5568;
+            --text-primary: #edf2f7;
+            --text-secondary: #a0aec0;
+            --accent-primary: #48bb78;
+            --accent-warning: #F59E0B;
+            --accent-danger: #EF4444;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        .avatar-link { display: inline-block; line-height: 0; }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Profile Page Specific Styles */
+        .profile-page-grid { display: grid; grid-template-columns: 1fr; gap: 30px; align-items: flex-start; }
+        @media (min-width: 992px) { .profile-page-grid { grid-template-columns: 340px 1fr; } }
+
+        .profile-card { background-color: var(--background-light); border-radius: 16px; padding: 30px; text-align: center; border: 1px solid var(--border-color); }
+        @media (min-width: 992px) { .profile-card { position: sticky; top: 100px; } }
+        
+        .profile-avatar-main { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--accent-primary); margin: 0 auto 15px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+        .profile-username-main { font-size: 1.8em; font-weight: 700; margin: 0 0 5px 0; color: var(--text-primary); }
+        .profile-join-date { color: var(--text-secondary); font-size: 0.9em; margin-bottom: 25px; }
+
+        .level-progress-circular { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
+        @property --progress-value { syntax: '<integer>'; initial-value: 0; inherits: false; }
+        .progress-circle { --size: 150px; --value: 0; width: var(--size); height: var(--size); border-radius: 50%; display: grid; place-items: center; background: radial-gradient(closest-side, var(--background-light) 79%, transparent 80% 100%), conic-gradient(var(--accent-primary) calc(var(--value) * 1%), var(--border-color) 0); animation: progress-animation 1s 0.3s forwards; transition: background 0.3s; }
+        @keyframes progress-animation { from { --progress-value: 0; } to { --progress-value: var(--value); } }
+        .progress-text { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .level-label { font-size: 0.9em; font-weight: 500; color: var(--text-secondary); }
+        .level-value { font-size: 2.5em; font-weight: 700; color: var(--text-primary); }
+        .xp-details-text { font-weight: 600; color: var(--text-secondary); margin-bottom: 30px; }
+
+
+        /* --- New Referral Box Styles --- */
+        .referral-box {
+            text-align: left;
+            background-color: transparent;
+            padding: 0;
+            border-radius: 12px;
+            border: none;
+            margin-top: 20px;
+        }
+        .referral-box h4 {
+            margin: 0 0 12px 4px;
+            font-weight: 600;
+            font-size: 1.1em;
+            color: var(--text-secondary);
+        }
+        .referral-input-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: var(--background-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+        .referral-input-wrapper:focus-within {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.3);
+        }
+        .referral-input-wrapper i.fa-link {
+            color: var(--text-secondary);
+            padding: 0 15px;
+            font-size: 1em;
+        }
+        .referral-input-wrapper input {
+            flex-grow: 1;
+            min-width: 0;
+            border: none;
+            background: none;
+            color: var(--text-primary);
+            padding: 14px 0;
+            outline: none;
+            font-size: 1em;
+            font-family: 'Poppins', sans-serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .referral-input-wrapper button {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 0 18px;
+            align-self: stretch;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-size: 1.1em;
+        }
+        .referral-input-wrapper button:hover {
+            background-color: #38a169;
+            transform: scale(1.05);
+        }
+        .referral-input-wrapper button:active {
+            transform: scale(0.98);
+        }
+        /* --- End of New Styles --- */
+
+        
+        .profile-details-grid { display: flex; flex-direction: column; gap: 30px; }
+        .stats-grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .stat-card { background-color: var(--background-light); border-radius: 16px; padding: 25px; display: flex; align-items: center; gap: 20px; border: 1px solid var(--border-color); transition: transform 0.2s, box-shadow 0.2s; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+        .stat-icon { font-size: 1.8em; width: 50px; height: 50px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; }
+        .stat-label { margin: 0 0 5px 0; color: var(--text-secondary); font-weight: 500; }
+        .stat-value { margin: 0; font-size: 2em; font-weight: 700; color: var(--text-primary); }
+        
+        .logout-button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; padding: 12px 30px; border-radius: 8px; font-weight: 600; font-size: 1em; text-align: center; background-color: var(--accent-danger); color: white; transition: background-color 0.2s ease, transform 0.2s ease; }
+        .logout-button:hover { background-color: #c53030; transform: translateY(-2px); }
+
+        .toast-notification { position: fixed; bottom: 20px; right: 20px; z-index: 1050; background-color: var(--background-light); color: var(--text-primary); padding: 15px 25px; border-radius: 8px; border-left: 5px solid var(--accent-primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); opacity: 0; transform: translateX(100%); transition: all 0.4s ease; }
+        .toast-notification.show { opacity: 1; transform: translateX(0); }
+
+        /* Mobile Nav & Header Styles */
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background-color: var(--background-light); border-top: 1px solid var(--border-color); justify-content: space-around; align-items: center; z-index: 1000; }
+        .mobile-bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 12px; font-weight: 500; gap: 4px; transition: color 0.2s; flex-grow: 1; text-decoration: none; height: 100%; }
+        .mobile-bottom-nav .nav-item i { font-size: 22px; }
+        .mobile-bottom-nav .nav-item.active { color: var(--accent-primary); }
+
+        @media (max-width: 768px) {
+            .profile-card {
+                position: static;
+            }
+            .new-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; padding: 0 15px; display: flex; align-items: center; background-color: var(--background-dark); border-bottom: 1px solid var(--border-color); z-index: 1010; }
+            .header-left { display: none; }
+            .header-right { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+            .user-profile-menu { order: 1; }
+            .user-balance { order: 2; }
+            .notifications { order: 3; }
+            .user-profile-menu #user-username, .user-profile-menu .fa-chevron-down { display: none; }
+            .user-profile-menu img#user-avatar { width: 38px; height: 38px; border: 2px solid var(--accent-primary); }
+            .user-balance { background-color: var(--accent-primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 1em; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+            .user-balance .fa-star { display: inline-block; color: white; }
+            .notifications #bell-icon { font-size: 1.6em; color: var(--text-secondary); }
+            .notifications .notification-count { top: -3px; right: -5px; }
+            .mobile-bottom-nav { display: flex; }
+            body { padding-top: 60px; padding-bottom: 65px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="new-header">
+        <div class="header-left">
+            <a href="/" class="logo">
+                <i class="fas fa-rocket"></i>
+                <span>LOOTZY</span>
+            </a>
+            <nav class="main-nav">
+                <a href="/">Dashboard</a>
+                <a href="/offers.html">Offers</a>
+                <a href="/store.html">Rewards</a>
+                <a href="/my_requests.html">My Requests</a>
+            </nav>
+        </div>
+        <div class="header-right">
+             <div class="user-profile-menu">
+                <a href="/profile.html" class="avatar-link">
+                    <img id="user-avatar" src="https://i.imgur.com/e6w0K0K.png" alt="User Avatar">
+                </a>
+                <span id="user-username">...</span>
+                <i class="fas fa-chevron-down"></i>
+                <div class="profile-dropdown">
+                    <a href="/profile.html">My Profile</a>
+                    <a href="/api/logout">Logout</a>
+                </div>
+            </div>
+            <div class="user-balance">
+                <i class="fas fa-star"></i>
+                <span id="user-balance-amount">...</span>
+            </div>
+            <div class="notifications">
+                <i id="bell-icon" class="fi fi-ss-bell bell-icon"></i>
+                <span id="notification-count" class="notification-count" style="display: none;"></span>
+                <div id="notifications-dropdown"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="profile-page-grid">
+            
+            <div class="profile-card">
+                <img id="profile-avatar-img" src="https://i.imgur.com/e6w0K0K.png" alt="User Avatar" class="profile-avatar-main">
+                <h2 id="profile-username" class="profile-username-main">Loading...</h2>
+                <p id="profile-joindate" class="profile-join-date">Loading...</p>
+                <div class="level-progress-circular">
+                    <div class="progress-circle" role="progressbar">
+                        <div class="progress-text">
+                            <span class="level-label">Level</span>
+                            <span id="profile-level" class="level-value">...</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="profile-xp-text" class="xp-details-text">... / ... XP</div>
+                <div class="referral-box">
+                    <h4>Your Referral Link</h4>
+                    <div class="referral-input-wrapper">
+                        <i class="fas fa-link"></i>
+                        <input id="referral-link-input" type="text" value="Loading..." readonly>
+                        <button id="copy-ref-link-btn" title="Copy Link"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <a href="/api/logout" class="logout-button">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+
+            <div class="profile-details-grid">
+                <div class="stats-grid-container">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: #34D399; background-color: rgba(52, 211, 153, 0.1);"><i class="fas fa-star"></i></div>
+                        <div class="stat-info"><p class="stat-label">My Points</p><p id="stat-points" class="stat-value">...</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: #60A5FA; background-color: rgba(96, 165, 250, 0.1);"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info"><p class="stat-label">Completed Offers</p><p id="stat-offers-completed" class="stat-value">...</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: #F472B6; background-color: rgba(244, 114, 182, 0.1);"><i class="fas fa-trophy"></i></div>
+                        <div class="stat-info"><p class="stat-label">Redeemed Rewards</p><p id="stat-rewards-redeemed" class="stat-value">...</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: #FBBF24; background-color: rgba(251, 191, 36, 0.1);"><i class="fas fa-users"></i></div>
+                        <div class="stat-info"><p class="stat-label">Referred Users</p><p id="stat-referrals" class="stat-value">...</p></div>
+                    </div>
+                </div>
+                </div>
+        </div>
+    </div>
+    
+    <nav class="mobile-bottom-nav">
+        <a href="/index.html" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+        <a href="/offers.html" class="nav-item"><i class="fas fa-list-check"></i><span>Offers</span></a>
+        <a href="/store.html" class="nav-item"><i class="fas fa-store"></i><span>Store</span></a>
+        <a href="/my_requests.html" class="nav-item"><i class="fas fa-inbox"></i><span>Requests</span></a>
+    </nav>
+
+    <div id="toast-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let user; 
+
+            function showToast(message, type = 'success') {
+                const toastContainer = document.getElementById('toast-container');
+                if (!toastContainer) {
+                    const container = document.createElement('div');
+                    container.id = 'toast-container';
+                    document.body.appendChild(container);
+                }
+                const toast = document.createElement('div');
+                toast.className = `toast-notification ${type}`;
+                toast.textContent = message;
+                document.getElementById('toast-container').appendChild(toast);
+                setTimeout(() => { toast.classList.add('show'); }, 100);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => { toast.remove(); }, 500);
+                }, 3000);
+            }
+
+            async function fetchAndPopulateUserData() {
+                try {
+                    const response = await fetch('/api/me');
+                    if (!response.ok) throw new Error('Failed to fetch user data');
+                    user = await response.json();
+                    
+                    // Populate Header
+                    document.getElementById('user-username').textContent = user.username;
+                    document.getElementById('user-balance-amount').textContent = parseFloat(user.points).toFixed(2);
+                    if(user.avatar_url) {
+                        document.getElementById('user-avatar').src = user.avatar_url;
+                        document.getElementById('profile-avatar-img').src = user.avatar_url;
+                    }
+                    
+                    // Populate Profile Card
+                    document.getElementById('profile-username').textContent = user.username;
+                    const joinDate = new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    document.getElementById('profile-joindate').textContent = `Joined ${joinDate}`;
+                    
+                    const xpNeeded = 100;
+                    document.getElementById('profile-level').textContent = user.level;
+                    document.getElementById('profile-xp-text').textContent = `${user.xp} / ${xpNeeded} XP`;
+                    const xpPercentage = (user.xp / xpNeeded) * 100;
+                    document.querySelector('.progress-circle').style.setProperty('--value', xpPercentage);
+
+                    const referralInput = document.getElementById('referral-link-input');
+                    if (user.referral_code) {
+                        referralInput.value = `${window.location.origin}/?ref=${user.referral_code}`;
+                    } else {
+                        referralInput.value = "Not available.";
+                    }
+
+                    // Populate Stats
+                    document.getElementById('stat-points').textContent = parseFloat(user.points).toFixed(2);
+                    document.getElementById('stat-offers-completed').textContent = user.total_offers_completed || 0;
+                    document.getElementById('stat-rewards-redeemed').textContent = user.redeemed_rewards_count || 0; 
+                    
+                    // ✨✨ --- هذا هو السطر الذي تم تعديله --- ✨✨
+                    document.getElementById('stat-referrals').textContent = user.referred_users_count || '0';
+
+                } catch (error) {
+                    console.error("Error populating page:", error);
+                }
+            }
+            
+            async function fetchNotifications() {
+                const notificationCount = document.getElementById('notification-count');
+                const notificationsDropdown = document.getElementById('notifications-dropdown');
+                try {
+                    const response = await fetch('/api/notifications');
+                    const notifications = await response.json();
+                    notificationsDropdown.innerHTML = '';
+
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'notification-header';
+                    headerDiv.textContent = 'Notifications';
+                    notificationsDropdown.appendChild(headerDiv);
+
+                    let unreadCount = 0;
+                    if (notifications.length === 0) {
+                        notificationsDropdown.innerHTML += '<div class="notification-item">No new notifications.</div>';
+                    } else {
+                        notifications.forEach(notif => {
+                            if (notif.is_read === 0) unreadCount++;
+                            const item = document.createElement('div');
+                            item.className = `notification-item ${notif.is_read === 0 ? 'unread' : ''}`;
+                            item.innerHTML = `
+                                <div class="notification-content">${notif.message}</div>
+                                <div class="notification-timestamp">${new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</div>
+                                ${notif.link_url ? `<a href="${notif.link_url}" class="notification-link">Read more</a>` : ''}
+                            `;
+                            notificationsDropdown.appendChild(item);
+                        });
+                    }
+
+                    if (unreadCount > 0) {
+                        notificationCount.textContent = unreadCount;
+                        notificationCount.style.display = 'inline-flex';
+                    } else {
+                        notificationCount.style.display = 'none';
+                    }
+                } catch (error) { console.error("Failed to fetch notifications", error); }
+            }
+
+            // Event Listeners for bell icon
+            document.getElementById('bell-icon').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const dropdown = document.getElementById('notifications-dropdown');
+                const isVisible = dropdown.style.display === 'block';
+                dropdown.style.display = isVisible ? 'none' : 'block';
+                if (!isVisible && document.getElementById('notification-count').style.display !== 'none') {
+                    await fetch('/api/notifications/mark-read', { method: 'POST' });
+                    document.getElementById('notification-count').style.display = 'none';
+                    dropdown.querySelectorAll('.unread').forEach(item => item.classList.remove('unread'));
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                const notificationsContainer = e.target.closest('.notifications');
+                const dropdown = document.getElementById('notifications-dropdown');
+                if (!notificationsContainer && dropdown) {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            // Event listener for copy button
+            const copyButton = document.getElementById('copy-ref-link-btn');
+            const referralInputForCopy = document.getElementById('referral-link-input');
+
+            if (copyButton) {
+                copyButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (user && user.referral_code) {
+                        navigator.clipboard.writeText(referralInputForCopy.value).then(() => {
+                            showToast('Referral link copied!');
+                        }).catch(err => {
+                            showToast('Failed to copy link.', 'error');
+                        });
+                    } else {
+                        showToast('Referral link is not available.', 'error');
+                    }
+                });
+            }
+
+            // Set active nav item
+            const currentPage = window.location.pathname;
+            const navItems = document.querySelectorAll('.mobile-bottom-nav .nav-item');
+            navItems.forEach(item => {
+                const itemPath = new URL(item.href).pathname;
+                if (itemPath === currentPage) {
+                    item.classList.add('active');
+                }
+            });
+
+            /* --- بداية كود سلاسة التنقل --- */
+            const internalLinks = document.querySelectorAll('a[href^="/"]');
+
+            internalLinks.forEach(link => {
+                // استثناء روابط معينة مثل تسجيل الخروج
+                if (link.href.includes('/api/logout')) {
+                    return;
+                }
+
+                link.addEventListener('click', function(e) {
+                    const destinationUrl = this.href;
+
+                    // لا تقم بشيء إذا كان الرابط يفتح في صفحة جديدة أو هو نفس الصفحة الحالية
+                    if (destinationUrl === window.location.href || this.target === '_blank') {
+                        return;
+                    }
+
+                    e.preventDefault(); // إيقاف الانتقال الفوري
+                    document.body.classList.add('fade-out'); // تطبيق تأثير التلاشي
+
+                    // الانتظار حتى انتهاء التأثير ثم الانتقال للرابط
+                    setTimeout(() => {
+                        window.location.href = destinationUrl;
+                    }, 500); // يجب أن تكون المدة نفس مدة التحريك في CSS
+                });
+            });
+            /* --- نهاية كود سلاسة التنقل --- */
+
+            fetchAndPopulateUserData();
+            fetchNotifications();
+        });
+    </script>
+</body>
+</html>
